@@ -1,0 +1,11 @@
+node_modules
+dist
+.turbo
+.DS_Store
+*.log
+apps/api/data/*.sqlite
+apps/api/data/*.sqlite-*
+apps/web/dist
+coverage
+
+AVALIACAO.md
