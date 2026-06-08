@@ -6,7 +6,7 @@ export const demandStatuses = [
   "in_progress",
   "blocked",
   "done",
-  "cancelled"
+  "cancelled",
 ] as const;
 
 export const demandPriorities = ["low", "medium", "high", "urgent"] as const;
@@ -16,7 +16,7 @@ export const demandEventTypes = [
   "priority_changed",
   "assignee_changed",
   "due_date_changed",
-  "comment_added"
+  "comment_added",
 ] as const;
 
 export const demandStatusSchema = z.enum(demandStatuses);
@@ -29,19 +29,19 @@ export type DemandEventType = z.infer<typeof demandEventTypeSchema>;
 
 export const clientSchema = z.object({
   id: z.string(),
-  name: z.string()
+  name: z.string(),
 });
 
 export const projectSchema = z.object({
   id: z.string(),
   clientId: z.string(),
-  name: z.string()
+  name: z.string(),
 });
 
 export const assigneeSchema = z.object({
   id: z.string(),
   name: z.string(),
-  email: z.string().email()
+  email: z.string().email(),
 });
 
 export const demandSchema = z.object({
@@ -56,7 +56,7 @@ export const demandSchema = z.object({
   dueDate: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  completedAt: z.string().nullable()
+  completedAt: z.string().nullable(),
 });
 
 export const demandEventSchema = z.object({
@@ -64,14 +64,14 @@ export const demandEventSchema = z.object({
   demandId: z.string(),
   type: demandEventTypeSchema,
   message: z.string(),
-  createdAt: z.string()
+  createdAt: z.string(),
 });
 
 export const demandCommentSchema = z.object({
   id: z.string(),
   demandId: z.string(),
   body: z.string(),
-  createdAt: z.string()
+  createdAt: z.string(),
 });
 
 export const createDemandSchema = z.object({
@@ -82,19 +82,19 @@ export const createDemandSchema = z.object({
   assigneeId: z.string().min(1).nullable().optional(),
   status: demandStatusSchema.default("todo"),
   priority: demandPrioritySchema,
-  dueDate: z.string().min(1)
+  dueDate: z.string().min(1),
 });
 
 export const updateDemandSchema = createDemandSchema.partial().extend({
-  assigneeId: z.string().min(1).nullable().optional()
+  assigneeId: z.string().min(1).nullable().optional(),
 });
 
 export const statusChangeSchema = z.object({
-  status: demandStatusSchema
+  status: demandStatusSchema,
 });
 
 export const addCommentSchema = z.object({
-  body: z.string().trim().min(3)
+  body: z.string().trim().min(3),
 });
 
 export const demandFiltersSchema = z.object({
@@ -103,7 +103,7 @@ export const demandFiltersSchema = z.object({
   clientId: z.string().optional(),
   assigneeId: z.string().optional(),
   overdue: z.enum(["true", "false"]).optional(),
-  search: z.string().optional()
+  search: z.string().optional(),
 });
 
 export type Client = z.infer<typeof clientSchema>;
@@ -128,10 +128,11 @@ export type DemandDetail = DemandWithRelations & {
   comments: DemandComment[];
 };
 
-export function isDemandOverdue(demand: Pick<Demand, "dueDate" | "status">, now = new Date()) {
+export function isDemandOverdue(
+  demand: Pick<Demand, "dueDate" | "status">,
+  now = new Date(),
+) {
   const due = new Date(`${demand.dueDate}T23:59:59.999`);
 
-  // TODO(candidate): this is intentionally incomplete. Done and cancelled
-  // demands should not be considered overdue.
   return due.getTime() < now.getTime();
 }

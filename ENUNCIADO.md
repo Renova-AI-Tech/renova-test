@@ -6,7 +6,11 @@ Você entrou em um projeto existente de backoffice. Sua tarefa é corrigir bugs 
 
 O sistema é um Painel de Demandas usado para acompanhar demandas de clientes e projetos. A base já possui API, frontend, banco local, dados de seed, tipos compartilhados e alguns testes. Ela não está completa de propósito.
 
-## Como rodar
+Você não precisa arquitetar uma aplicação do zero. O objetivo é mostrar como você entende uma base existente, corrige regras, integra frontend/backend e entrega mudanças com clareza.
+
+## Antes de começar
+
+Instale dependências, crie o banco local e rode o projeto:
 
 ```bash
 pnpm install
@@ -25,7 +29,16 @@ Checks úteis:
 pnpm test
 pnpm lint
 pnpm typecheck
+pnpm build
 ```
+
+## Mapa rápido do projeto
+
+- `packages/shared`: tipos, enums e schemas Zod compartilhados.
+- `apps/api`: API Fastify, banco SQLite, seed e testes de API.
+- `apps/web`: aplicação React, rotas, páginas, componentes e service de API.
+
+Use esse mapa para se orientar, mas fique livre para navegar pelo código e encontrar os pontos exatos de mudança.
 
 ## Tarefas obrigatórias
 
@@ -117,6 +130,18 @@ Criar pelo menos:
 - 1 teste para transição inválida de status;
 - 1 teste para criação de demanda com payload inválido.
 
+## Fora do escopo
+
+Você não precisa implementar:
+
+- autenticação ou autorização;
+- deploy;
+- Docker;
+- banco remoto;
+- novo design system;
+- troca de stack;
+- refatoração ampla sem relação com as tarefas.
+
 ## Critérios de avaliação
 
 - funcionalidade;
@@ -127,12 +152,17 @@ Criar pelo menos:
 - tratamento de erro;
 - validações;
 - testes;
-- README;
+- README ou observações de entrega;
 - commits.
 
 ## Entrega esperada
 
-- repositório GitHub;
-- instruções para rodar;
-- descrição do que foi feito;
-- observações sobre pendências, se houver.
+Envie o link do repositório, fork, branch ou pull request com sua solução.
+
+Inclua uma breve descrição com:
+
+- o que foi implementado;
+- quais comandos você rodou para validar;
+- pendências ou decisões importantes, se houver.
+
+Não é necessário entregar uma solução perfeita ou sofisticada. É mais importante entregar uma solução funcional, coerente com a base existente e bem explicada.

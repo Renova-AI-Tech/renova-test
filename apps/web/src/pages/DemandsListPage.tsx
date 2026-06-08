@@ -1,4 +1,10 @@
-import { demandFiltersSchema, type Assignee, type Client, type DemandFilters, type DemandWithRelations } from "@painel-demandas/shared";
+import {
+  demandFiltersSchema,
+  type Assignee,
+  type Client,
+  type DemandFilters,
+  type DemandWithRelations,
+} from "@painel-demandas/shared";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { DemandFilters as DemandFiltersForm } from "../components/DemandFilters";
@@ -34,7 +40,7 @@ export function DemandsListPage() {
         const [nextDemands, nextClients, nextAssignees] = await Promise.all([
           api.demands(filters),
           api.clients(),
-          api.assignees()
+          api.assignees(),
         ]);
 
         if (active) {
@@ -44,7 +50,11 @@ export function DemandsListPage() {
         }
       } catch (loadError) {
         if (active) {
-          setError(loadError instanceof Error ? loadError.message : "Erro ao carregar demandas.");
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Erro ao carregar demandas.",
+          );
         }
       } finally {
         if (active) {
@@ -63,8 +73,6 @@ export function DemandsListPage() {
   function updateFilters(nextFilters: DemandFilters) {
     const params = new URLSearchParams();
 
-    // TODO(candidate): advanced filters are visible but only status/search are
-    // reliably supported by the current base.
     if (nextFilters.status) {
       params.set("status", nextFilters.status);
     }
@@ -81,19 +89,30 @@ export function DemandsListPage() {
       <header className="page-header">
         <div>
           <h1>Painel de Demandas</h1>
-          <p>Backoffice interno para acompanhar demandas de clientes e projetos.</p>
+          <p>
+            Backoffice interno para acompanhar demandas de clientes e projetos.
+          </p>
         </div>
         <Link className="button" to="/demands/new">
           Nova demanda
         </Link>
       </header>
 
-      <DemandFiltersForm filters={filters} clients={clients} assignees={assignees} onChange={updateFilters} />
+      <DemandFiltersForm
+        filters={filters}
+        clients={clients}
+        assignees={assignees}
+        onChange={updateFilters}
+      />
 
       {loading ? <LoadingState /> : null}
       {error ? <ErrorState message={error} /> : null}
-      {!loading && !error && demands.length === 0 ? <EmptyState title="Nenhuma demanda encontrada." /> : null}
-      {!loading && !error && demands.length > 0 ? <DemandTable demands={demands} /> : null}
+      {!loading && !error && demands.length === 0 ? (
+        <EmptyState title="Nenhuma demanda encontrada." />
+      ) : null}
+      {!loading && !error && demands.length > 0 ? (
+        <DemandTable demands={demands} />
+      ) : null}
     </main>
   );
 }

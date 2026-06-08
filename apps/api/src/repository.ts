@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import {
   addCommentSchema,
   createDemandSchema,
@@ -14,8 +13,9 @@ import {
   type DemandEvent,
   type DemandFilters,
   type DemandWithRelations,
-  type Project
+  type Project,
 } from "@painel-demandas/shared";
+import { randomUUID } from "node:crypto";
 import type { AppDatabase } from "./db";
 
 type DemandRow = {
@@ -77,7 +77,7 @@ function mapDemand(row: DemandRow): Demand {
     dueDate: row.dueDate,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-    completedAt: row.completedAt
+    completedAt: row.completedAt,
   };
 }
 
@@ -88,11 +88,22 @@ function mapDemandWithRelations(row: JoinedDemandRow): DemandWithRelations {
     ...demand,
     isOverdue: isDemandOverdue(demand),
     client: row.clientName ? { id: row.clientId, name: row.clientName } : null,
-    project: row.projectName && row.projectClientId ? { id: row.projectId, clientId: row.projectClientId, name: row.projectName } : null,
+    project:
+      row.projectName && row.projectClientId
+        ? {
+            id: row.projectId,
+            clientId: row.projectClientId,
+            name: row.projectName,
+          }
+        : null,
     assignee:
       row.assigneeId && row.assigneeName && row.assigneeEmail
-        ? { id: row.assigneeId, name: row.assigneeName, email: row.assigneeEmail }
-        : null
+        ? {
+            id: row.assigneeId,
+            name: row.assigneeName,
+            email: row.assigneeEmail,
+          }
+        : null,
   };
 }
 
@@ -102,7 +113,9 @@ function normalizePatchPayload(input: unknown) {
   }
 
   return Object.fromEntries(
-    Object.entries(input).filter(([, value]) => value !== undefined && value !== "")
+    Object.entries(input).filter(
+      ([, value]) => value !== undefined && value !== "",
+    ),
   );
 }
 
@@ -114,17 +127,24 @@ function todayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function insertEvent(db: AppDatabase, demandId: string, type: DemandEvent["type"], message: string) {
+function insertEvent(
+  db: AppDatabase,
+  demandId: string,
+  type: DemandEvent["type"],
+  message: string,
+) {
   const createdAt = new Date().toISOString();
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO demand_events (id, demand_id, type, message, created_at)
     VALUES (@id, @demandId, @type, @message, @createdAt)
-  `).run({
+  `,
+  ).run({
     id: randomUUID(),
     demandId,
     type,
     message,
-    createdAt
+    createdAt,
   });
 }
 
@@ -154,15 +174,23 @@ const baseDemandSelect = `
 `;
 
 export function listClients(db: AppDatabase) {
-  return db.prepare("SELECT id, name FROM clients ORDER BY name").all() as Client[];
+  return db
+    .prepare("SELECT id, name FROM clients ORDER BY name")
+    .all() as Client[];
 }
 
 export function listProjects(db: AppDatabase) {
-  return db.prepare("SELECT id, client_id AS clientId, name FROM projects ORDER BY name").all() as Project[];
+  return db
+    .prepare(
+      "SELECT id, client_id AS clientId, name FROM projects ORDER BY name",
+    )
+    .all() as Project[];
 }
 
 export function listAssignees(db: AppDatabase) {
-  return db.prepare("SELECT id, name, email FROM assignees ORDER BY name").all() as Assignee[];
+  return db
+    .prepare("SELECT id, name, email FROM assignees ORDER BY name")
+    .all() as Assignee[];
 }
 
 export function listDemands(db: AppDatabase, query: unknown) {
@@ -177,12 +205,12 @@ export function listDemands(db: AppDatabase, query: unknown) {
   }
 
   if (filters.search) {
-    where.push("(LOWER(d.title) LIKE @search OR LOWER(d.description) LIKE @search)");
+    where.push(
+      "(LOWER(d.title) LIKE @search OR LOWER(d.description) LIKE @search)",
+    );
     params.search = `%${filters.search.toLowerCase()}%`;
   }
 
-  // TODO(candidate): priority, clientId, assigneeId and overdue filters are
-  // intentionally not wired yet. The web already exposes the controls.
   const sql = `
     ${baseDemandSelect}
     ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
@@ -196,13 +224,18 @@ export function listDemands(db: AppDatabase, query: unknown) {
       d.due_date ASC
   `;
 
-  return (db.prepare(sql).all(params) as JoinedDemandRow[]).map(mapDemandWithRelations);
+  return (db.prepare(sql).all(params) as JoinedDemandRow[]).map(
+    mapDemandWithRelations,
+  );
 }
 
-export function getDemandById(db: AppDatabase, id: string): DemandDetail | null {
-  const row = db
-    .prepare(`${baseDemandSelect} WHERE d.id = @id`)
-    .get({ id }) as JoinedDemandRow | undefined;
+export function getDemandById(
+  db: AppDatabase,
+  id: string,
+): DemandDetail | null {
+  const row = db.prepare(`${baseDemandSelect} WHERE d.id = @id`).get({ id }) as
+    | JoinedDemandRow
+    | undefined;
 
   if (!row) {
     return null;
@@ -211,25 +244,44 @@ export function getDemandById(db: AppDatabase, id: string): DemandDetail | null 
   return {
     ...mapDemandWithRelations(row),
     events: listEvents(db, id),
-    comments: listComments(db, id)
+    comments: listComments(db, id),
   };
 }
 
-export function createDemand(db: AppDatabase, payload: unknown): RepositoryResult<DemandDetail> {
+export function createDemand(
+  db: AppDatabase,
+  payload: unknown,
+): RepositoryResult<DemandDetail> {
   const parsed = createDemandSchema.safeParse(payload);
 
   if (!parsed.success) {
-    return { ok: false, statusCode: 400, message: "Payload invalido.", issues: parsed.error.flatten() };
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Payload invalido.",
+      issues: parsed.error.flatten(),
+    };
   }
 
   const input = parsed.data;
 
   if (compareDateOnly(input.dueDate, todayDate()) < 0) {
-    return { ok: false, statusCode: 400, message: "A data de prazo nao pode ser anterior a hoje." };
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "A data de prazo nao pode ser anterior a hoje.",
+    };
   }
 
-  if ((input.status === "in_progress" || input.status === "done") && !input.assigneeId) {
-    return { ok: false, statusCode: 400, message: "Demandas em andamento ou concluidas precisam de responsavel." };
+  if (
+    (input.status === "in_progress" || input.status === "done") &&
+    !input.assigneeId
+  ) {
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Demandas em andamento ou concluidas precisam de responsavel.",
+    };
   }
 
   const now = new Date().toISOString();
@@ -245,10 +297,11 @@ export function createDemand(db: AppDatabase, payload: unknown): RepositoryResul
     dueDate: input.dueDate,
     createdAt: now,
     updatedAt: now,
-    completedAt: input.status === "done" ? now : null
+    completedAt: input.status === "done" ? now : null,
   };
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO demands (
       id, title, description, client_id, project_id, assignee_id, status, priority,
       due_date, created_at, updated_at, completed_at
@@ -257,13 +310,23 @@ export function createDemand(db: AppDatabase, payload: unknown): RepositoryResul
       @id, @title, @description, @clientId, @projectId, @assigneeId, @status, @priority,
       @dueDate, @createdAt, @updatedAt, @completedAt
     )
-  `).run(demand);
+  `,
+  ).run(demand);
 
-  insertEvent(db, demand.id, "status_changed", `Demanda criada com status ${demand.status}.`);
+  insertEvent(
+    db,
+    demand.id,
+    "status_changed",
+    `Demanda criada com status ${demand.status}.`,
+  );
   return { ok: true, data: getDemandById(db, demand.id) as DemandDetail };
 }
 
-export function updateDemand(db: AppDatabase, id: string, payload: unknown): RepositoryResult<DemandDetail> {
+export function updateDemand(
+  db: AppDatabase,
+  id: string,
+  payload: unknown,
+): RepositoryResult<DemandDetail> {
   const existing = getDemandById(db, id);
 
   if (!existing) {
@@ -273,7 +336,12 @@ export function updateDemand(db: AppDatabase, id: string, payload: unknown): Rep
   const parsed = updateDemandSchema.safeParse(normalizePatchPayload(payload));
 
   if (!parsed.success) {
-    return { ok: false, statusCode: 400, message: "Payload invalido.", issues: parsed.error.flatten() };
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Payload invalido.",
+      issues: parsed.error.flatten(),
+    };
   }
 
   const fields = parsed.data;
@@ -288,7 +356,7 @@ export function updateDemand(db: AppDatabase, id: string, payload: unknown): Rep
     assigneeId: "assignee_id",
     status: "status",
     priority: "priority",
-    dueDate: "due_date"
+    dueDate: "due_date",
   } as const;
 
   for (const [field, column] of Object.entries(columnMap)) {
@@ -306,11 +374,17 @@ export function updateDemand(db: AppDatabase, id: string, payload: unknown): Rep
   params.updatedAt = new Date().toISOString();
   updates.push("updated_at = @updatedAt");
 
-  db.prepare(`UPDATE demands SET ${updates.join(", ")} WHERE id = @id`).run(params);
+  db.prepare(`UPDATE demands SET ${updates.join(", ")} WHERE id = @id`).run(
+    params,
+  );
   return { ok: true, data: getDemandById(db, id) as DemandDetail };
 }
 
-export function changeDemandStatus(db: AppDatabase, id: string, payload: unknown): RepositoryResult<DemandDetail> {
+export function changeDemandStatus(
+  db: AppDatabase,
+  id: string,
+  payload: unknown,
+): RepositoryResult<DemandDetail> {
   const existing = getDemandById(db, id);
 
   if (!existing) {
@@ -320,54 +394,72 @@ export function changeDemandStatus(db: AppDatabase, id: string, payload: unknown
   const parsed = statusChangeSchema.safeParse(payload);
 
   if (!parsed.success) {
-    return { ok: false, statusCode: 400, message: "Payload invalido.", issues: parsed.error.flatten() };
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Payload invalido.",
+      issues: parsed.error.flatten(),
+    };
   }
 
   const status = parsed.data.status;
   const now = new Date().toISOString();
 
-  // TODO(candidate): this route intentionally skips important transition
-  // validations: assignee requirement, reopening done/cancelled, and blocked flows.
-  db.prepare(`
+  db.prepare(
+    `
     UPDATE demands
     SET status = @status,
         updated_at = @updatedAt,
         completed_at = @completedAt
     WHERE id = @id
-  `).run({
+  `,
+  ).run({
     id,
     status,
     updatedAt: now,
-    completedAt: status === "done" ? now : existing.completedAt
+    completedAt: status === "done" ? now : existing.completedAt,
   });
 
-  insertEvent(db, id, "status_changed", `Status alterado de ${existing.status} para ${status}.`);
+  insertEvent(
+    db,
+    id,
+    "status_changed",
+    `Status alterado de ${existing.status} para ${status}.`,
+  );
   return { ok: true, data: getDemandById(db, id) as DemandDetail };
 }
 
 export function listEvents(db: AppDatabase, demandId: string) {
   return db
-    .prepare(`
+    .prepare(
+      `
       SELECT id, demand_id AS demandId, type, message, created_at AS createdAt
       FROM demand_events
       WHERE demand_id = @demandId
       ORDER BY created_at DESC
-    `)
+    `,
+    )
     .all({ demandId }) as EventRow[];
 }
 
 export function listComments(db: AppDatabase, demandId: string) {
   return db
-    .prepare(`
+    .prepare(
+      `
       SELECT id, demand_id AS demandId, body, created_at AS createdAt
       FROM demand_comments
       WHERE demand_id = @demandId
       ORDER BY created_at DESC
-    `)
+    `,
+    )
     .all({ demandId }) as CommentRow[];
 }
 
-export function addComment(db: AppDatabase, demandId: string, payload: AddCommentInput): RepositoryResult<DemandComment> {
+export function addComment(
+  db: AppDatabase,
+  demandId: string,
+  payload: AddCommentInput,
+): RepositoryResult<DemandComment> {
   const existing = getDemandById(db, demandId);
 
   if (!existing) {
@@ -377,20 +469,27 @@ export function addComment(db: AppDatabase, demandId: string, payload: AddCommen
   const parsed = addCommentSchema.safeParse(payload);
 
   if (!parsed.success) {
-    return { ok: false, statusCode: 400, message: "Payload invalido.", issues: parsed.error.flatten() };
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Payload invalido.",
+      issues: parsed.error.flatten(),
+    };
   }
 
   const comment = {
     id: randomUUID(),
     demandId,
     body: parsed.data.body,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
   };
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO demand_comments (id, demand_id, body, created_at)
     VALUES (@id, @demandId, @body, @createdAt)
-  `).run(comment);
+  `,
+  ).run(comment);
 
   insertEvent(db, demandId, "comment_added", "Comentario adicionado.");
   return { ok: true, data: comment };

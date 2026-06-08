@@ -7,7 +7,7 @@ import {
   type Client,
   type CreateDemandInput,
   type DemandDetail,
-  type Project
+  type Project,
 } from "@painel-demandas/shared";
 import { useForm } from "react-hook-form";
 
@@ -25,21 +25,27 @@ const statusLabels = {
   in_progress: "Em andamento",
   blocked: "Bloqueada",
   done: "Concluida",
-  cancelled: "Cancelada"
+  cancelled: "Cancelada",
 };
 
 const priorityLabels = {
   low: "Baixa",
   medium: "Media",
   high: "Alta",
-  urgent: "Urgente"
+  urgent: "Urgente",
 };
 
-export function DemandForm({ mode, clients, projects, assignees, demand }: DemandFormProps) {
+export function DemandForm({
+  mode,
+  clients,
+  projects,
+  assignees,
+  demand,
+}: DemandFormProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting },
   } = useForm<CreateDemandInput>({
     resolver: zodResolver(createDemandSchema),
     defaultValues: demand
@@ -51,17 +57,15 @@ export function DemandForm({ mode, clients, projects, assignees, demand }: Deman
           assigneeId: demand.assigneeId,
           status: demand.status,
           priority: demand.priority,
-          dueDate: demand.dueDate
+          dueDate: demand.dueDate,
         }
       : {
           status: "todo",
-          priority: "medium"
-        }
+          priority: "medium",
+        },
   });
 
   function onSubmit(values: CreateDemandInput) {
-    // TODO(candidate): connect create/edit submission to the API and preserve
-    // untouched fields during edit.
     console.info("DemandForm submitted but not wired yet", mode, values);
   }
 
@@ -71,7 +75,9 @@ export function DemandForm({ mode, clients, projects, assignees, demand }: Deman
         <label>
           Titulo
           <input {...register("title")} />
-          {errors.title ? <span className="field-error">{errors.title.message}</span> : null}
+          {errors.title ? (
+            <span className="field-error">{errors.title.message}</span>
+          ) : null}
         </label>
 
         <label>
@@ -95,7 +101,9 @@ export function DemandForm({ mode, clients, projects, assignees, demand }: Deman
               </option>
             ))}
           </select>
-          {errors.clientId ? <span className="field-error">{errors.clientId.message}</span> : null}
+          {errors.clientId ? (
+            <span className="field-error">{errors.clientId.message}</span>
+          ) : null}
         </label>
 
         <label>
@@ -108,7 +116,9 @@ export function DemandForm({ mode, clients, projects, assignees, demand }: Deman
               </option>
             ))}
           </select>
-          {errors.projectId ? <span className="field-error">{errors.projectId.message}</span> : null}
+          {errors.projectId ? (
+            <span className="field-error">{errors.projectId.message}</span>
+          ) : null}
         </label>
 
         <label>
@@ -137,18 +147,26 @@ export function DemandForm({ mode, clients, projects, assignees, demand }: Deman
         <label>
           Prazo
           <input type="date" {...register("dueDate")} />
-          {errors.dueDate ? <span className="field-error">{errors.dueDate.message}</span> : null}
+          {errors.dueDate ? (
+            <span className="field-error">{errors.dueDate.message}</span>
+          ) : null}
         </label>
       </div>
 
       <label>
         Descricao
         <textarea rows={6} {...register("description")} />
-        {errors.description ? <span className="field-error">{errors.description.message}</span> : null}
+        {errors.description ? (
+          <span className="field-error">{errors.description.message}</span>
+        ) : null}
       </label>
 
       <div className="form-actions">
-        <button className="button button--secondary" type="button" onClick={() => window.history.back()}>
+        <button
+          className="button button--secondary"
+          type="button"
+          onClick={() => window.history.back()}
+        >
           Voltar
         </button>
         <button className="button" type="submit" disabled={isSubmitting}>

@@ -3,7 +3,7 @@ import {
   demandStatuses,
   type Assignee,
   type Client,
-  type DemandFilters as DemandFiltersValue
+  type DemandFilters as DemandFiltersValue,
 } from "@painel-demandas/shared";
 
 type DemandFiltersProps = {
@@ -19,25 +19,28 @@ const statusLabels = {
   in_progress: "Em andamento",
   blocked: "Bloqueada",
   done: "Concluida",
-  cancelled: "Cancelada"
+  cancelled: "Cancelada",
 };
 
 const priorityLabels = {
   low: "Baixa",
   medium: "Media",
   high: "Alta",
-  urgent: "Urgente"
+  urgent: "Urgente",
 };
 
-export function DemandFilters({ filters, clients, assignees, onChange }: DemandFiltersProps) {
+export function DemandFilters({
+  filters,
+  clients,
+  assignees,
+  onChange,
+}: DemandFiltersProps) {
   function update(key: keyof DemandFiltersValue, value: string) {
     const next = {
       ...filters,
-      [key]: value || undefined
+      [key]: value || undefined,
     };
 
-    // TODO(candidate): only status and search are fully reflected today.
-    // Wire the remaining controls to URL state and API query handling.
     onChange(next);
   }
 
@@ -54,7 +57,10 @@ export function DemandFilters({ filters, clients, assignees, onChange }: DemandF
 
       <label>
         Status
-        <select value={filters.status ?? ""} onChange={(event) => update("status", event.target.value)}>
+        <select
+          value={filters.status ?? ""}
+          onChange={(event) => update("status", event.target.value)}
+        >
           <option value="">Todos</option>
           {demandStatuses.map((status) => (
             <option key={status} value={status}>
@@ -66,7 +72,10 @@ export function DemandFilters({ filters, clients, assignees, onChange }: DemandF
 
       <label>
         Prioridade
-        <select value={filters.priority ?? ""} onChange={(event) => update("priority", event.target.value)}>
+        <select
+          value={filters.priority ?? ""}
+          onChange={(event) => update("priority", event.target.value)}
+        >
           <option value="">Todas</option>
           {demandPriorities.map((priority) => (
             <option key={priority} value={priority}>
@@ -78,7 +87,10 @@ export function DemandFilters({ filters, clients, assignees, onChange }: DemandF
 
       <label>
         Cliente
-        <select value={filters.clientId ?? ""} onChange={(event) => update("clientId", event.target.value)}>
+        <select
+          value={filters.clientId ?? ""}
+          onChange={(event) => update("clientId", event.target.value)}
+        >
           <option value="">Todos</option>
           {clients.map((client) => (
             <option key={client.id} value={client.id}>
@@ -90,7 +102,10 @@ export function DemandFilters({ filters, clients, assignees, onChange }: DemandF
 
       <label>
         Responsavel
-        <select value={filters.assigneeId ?? ""} onChange={(event) => update("assigneeId", event.target.value)}>
+        <select
+          value={filters.assigneeId ?? ""}
+          onChange={(event) => update("assigneeId", event.target.value)}
+        >
           <option value="">Todos</option>
           {assignees.map((assignee) => (
             <option key={assignee.id} value={assignee.id}>
@@ -102,7 +117,10 @@ export function DemandFilters({ filters, clients, assignees, onChange }: DemandF
 
       <label>
         Atraso
-        <select value={filters.overdue ?? ""} onChange={(event) => update("overdue", event.target.value)}>
+        <select
+          value={filters.overdue ?? ""}
+          onChange={(event) => update("overdue", event.target.value)}
+        >
           <option value="">Todos</option>
           <option value="true">Atrasadas</option>
           <option value="false">No prazo</option>
