@@ -2,7 +2,7 @@
 
 Repositório base para um teste técnico full stack.
 
-Este projeto simula um backoffice interno usado para acompanhar demandas de clientes e projetos. A base já roda, possui API, frontend, banco local, seed e alguns testes, mas não está completa de propósito. O candidato deve evoluir um sistema existente, seguindo a estrutura atual, sem reescrever tudo do zero.
+Este projeto simula um backoffice interno usado para acompanhar demandas de clientes e projetos. A base já possui API, frontend, banco local, seed e alguns testes. O objetivo do teste é evoluir um sistema existente, seguindo a estrutura atual, sem reescrever tudo do zero.
 
 Leia também o [ENUNCIADO.md](./ENUNCIADO.md), que descreve as tarefas obrigatórias.
 
@@ -114,16 +114,11 @@ pnpm build
 - `GET /demands/:id/events`
 - `POST /demands/:id/comments`
 
-## Lacunas intencionais
+## Escopo do teste
 
-Estas lacunas fazem parte do teste:
+O projeto já tem telas, endpoints e dados iniciais suficientes para você entender o domínio e começar a trabalhar. As melhorias esperadas estão descritas no [ENUNCIADO.md](./ENUNCIADO.md).
 
-- A regra de demanda atrasada considera qualquer prazo passado como atraso, inclusive demandas `done` e `cancelled`.
-- Os filtros avançados da listagem existem na UI, mas não estão completamente refletidos na URL e na API.
-- `PATCH /demands/:id/status` existe, mas ainda não aplica todas as validações de transição.
-- O histórico já existe, mas o fluxo ainda não cobre todos os eventos esperados.
-- O formulário de nova demanda/edição usa React Hook Form, mas o envio ainda não está conectado ao backend.
-- Há testes iniciais, mas testes importantes ainda devem ser adicionados pelo candidato.
+Use o README para preparar o ambiente e entender a estrutura. Use o enunciado para acompanhar as tarefas que devem ser entregues.
 
 ## Orientações para trabalhar na base
 

@@ -4,7 +4,7 @@
 
 Você entrou em um projeto existente de backoffice. Sua tarefa é corrigir bugs e implementar melhorias seguindo a estrutura atual do projeto.
 
-O sistema é um Painel de Demandas usado para acompanhar demandas de clientes e projetos. A base já possui API, frontend, banco local, dados de seed, tipos compartilhados e alguns testes. Ela não está completa de propósito.
+O sistema é um Painel de Demandas usado para acompanhar demandas de clientes e projetos. A base já possui API, frontend, banco local, dados de seed, tipos compartilhados e alguns testes. Algumas partes ainda estão incompletas ou com comportamento incorreto; elas estão descritas nas tarefas abaixo.
 
 Você não precisa arquitetar uma aplicação do zero. O objetivo é mostrar como você entende uma base existente, corrige regras, integra frontend/backend e entrega mudanças com clareza.
 
