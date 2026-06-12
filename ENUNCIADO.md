@@ -40,7 +40,7 @@ pnpm build
 
 Use esse mapa para se orientar, mas fique livre para navegar pelo código e encontrar os pontos exatos de mudança.
 
-## Tarefas obrigatórias
+## Tarefas
 
 ### 1. Corrigir regra de demandas atrasadas
 
