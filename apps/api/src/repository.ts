@@ -204,6 +204,21 @@ export function listDemands(db: AppDatabase, query: unknown) {
     params.status = filters.status;
   }
 
+  if (filters.priority) {
+    where.push("d.priority = @priority");
+    params.priority = filters.priority;
+  }
+
+  if (filters.clientId) {
+    where.push("d.client_id = @clientId");
+    params.clientId = filters.clientId;
+  }
+
+  if (filters.assigneeId) {
+    where.push("d.assignee_id = @assigneeId");
+    params.assigneeId = filters.assigneeId;
+  }
+
   if (filters.search) {
     where.push(
       "(LOWER(d.title) LIKE @search OR LOWER(d.description) LIKE @search)",
@@ -224,9 +239,16 @@ export function listDemands(db: AppDatabase, query: unknown) {
       d.due_date ASC
   `;
 
-  return (db.prepare(sql).all(params) as JoinedDemandRow[]).map(
+  const demands = (db.prepare(sql).all(params) as JoinedDemandRow[]).map(
     mapDemandWithRelations,
   );
+
+  if (filters.overdue) {
+    const overdue = filters.overdue === "true";
+    return demands.filter((demand) => demand.isOverdue === overdue);
+  }
+
+  return demands;
 }
 
 export function getDemandById(
