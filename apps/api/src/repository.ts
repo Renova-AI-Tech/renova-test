@@ -1,6 +1,6 @@
 import {
   addCommentSchema,
-  createDemandSchema,
+  createDemandFormSchema,
   demandFiltersSchema,
   isDemandOverdue,
   statusChangeSchema,
@@ -117,14 +117,6 @@ function normalizePatchPayload(input: unknown) {
       ([, value]) => value !== undefined && value !== "",
     ),
   );
-}
-
-function compareDateOnly(left: string, right: string) {
-  return left.localeCompare(right);
-}
-
-function todayDate() {
-  return new Date().toISOString().slice(0, 10);
 }
 
 function insertEvent(
@@ -274,7 +266,7 @@ export function createDemand(
   db: AppDatabase,
   payload: unknown,
 ): RepositoryResult<DemandDetail> {
-  const parsed = createDemandSchema.safeParse(payload);
+  const parsed = createDemandFormSchema.safeParse(payload);
 
   if (!parsed.success) {
     return {
@@ -286,25 +278,6 @@ export function createDemand(
   }
 
   const input = parsed.data;
-
-  if (compareDateOnly(input.dueDate, todayDate()) < 0) {
-    return {
-      ok: false,
-      statusCode: 400,
-      message: "A data de prazo nao pode ser anterior a hoje.",
-    };
-  }
-
-  if (
-    (input.status === "in_progress" || input.status === "done") &&
-    !input.assigneeId
-  ) {
-    return {
-      ok: false,
-      statusCode: 400,
-      message: "Demandas em andamento ou concluidas precisam de responsavel.",
-    };
-  }
 
   const now = new Date().toISOString();
   const demand = {

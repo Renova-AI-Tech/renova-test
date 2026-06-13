@@ -60,7 +60,11 @@ export function DemandFormPage({ mode }: DemandFormPageProps) {
       <header className="page-header">
         <div>
           <h1>{mode === "create" ? "Nova demanda" : "Editar demanda"}</h1>
-          <p>Formulario base com validacao inicial e integracao de envio pendente.</p>
+          <p>
+            {mode === "create"
+              ? "Preencha os dados para registrar uma nova demanda."
+              : "Atualize os campos necessarios da demanda."}
+          </p>
         </div>
       </header>
 

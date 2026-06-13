@@ -89,6 +89,23 @@ export const updateDemandSchema = createDemandSchema.partial().extend({
   assigneeId: z.string().min(1).nullable().optional(),
 });
 
+function requiresAssignee(status: DemandStatus) {
+  return status === "in_progress" || status === "done";
+}
+
+export const createDemandFormSchema = createDemandSchema
+  .refine((data) => data.dueDate >= new Date().toISOString().slice(0, 10), {
+    message: "A data de prazo nao pode ser anterior a hoje.",
+    path: ["dueDate"],
+  })
+  .refine(
+    (data) => (requiresAssignee(data.status) ? Boolean(data.assigneeId) : true),
+    {
+      message: "Selecione um responsavel para esse status.",
+      path: ["assigneeId"],
+    },
+  );
+
 export const statusChangeSchema = z.object({
   status: demandStatusSchema,
 });
@@ -113,6 +130,7 @@ export type Demand = z.infer<typeof demandSchema>;
 export type DemandEvent = z.infer<typeof demandEventSchema>;
 export type DemandComment = z.infer<typeof demandCommentSchema>;
 export type CreateDemandInput = z.infer<typeof createDemandSchema>;
+export type CreateDemandFormInput = z.infer<typeof createDemandFormSchema>;
 export type UpdateDemandInput = z.infer<typeof updateDemandSchema>;
 export type DemandFilters = z.infer<typeof demandFiltersSchema>;
 
