@@ -1,11 +1,31 @@
-import type { DemandDetail } from "@painel-demandas/shared";
-import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  addCommentSchema,
+  demandStatuses,
+  type DemandDetail,
+  type DemandStatus,
+} from "@painel-demandas/shared";
+import { useCallback, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { DemandPriorityBadge } from "../components/DemandPriorityBadge";
 import { DemandStatusBadge } from "../components/DemandStatusBadge";
 import { ErrorState } from "../components/ErrorState";
 import { LoadingState } from "../components/LoadingState";
 import { api } from "../services/api";
+
+const statusLabels: Record<DemandStatus, string> = {
+  backlog: "Backlog",
+  todo: "A fazer",
+  in_progress: "Em andamento",
+  blocked: "Bloqueada",
+  done: "Concluida",
+  cancelled: "Cancelada",
+};
+
+function isClosed(status: DemandStatus) {
+  return status === "done" || status === "cancelled";
+}
 
 export function DemandDetailPage() {
   const params = useParams();
@@ -14,6 +34,26 @@ export function DemandDetailPage() {
   const [demand, setDemand] = useState<DemandDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusSaving, setStatusSaving] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<{ body: string }>({
+    resolver: zodResolver(addCommentSchema),
+  });
+
+  const refresh = useCallback(async () => {
+    if (!params.id) {
+      return;
+    }
+
+    const next = await api.demand(params.id);
+    setDemand(next);
+  }, [params.id]);
 
   useEffect(() => {
     let active = true;
@@ -48,6 +88,36 @@ export function DemandDetailPage() {
       active = false;
     };
   }, [params.id]);
+
+  async function onChangeStatus(status: DemandStatus) {
+    if (!demand || status === demand.status) {
+      return;
+    }
+
+    setStatusError(null);
+    setStatusSaving(true);
+
+    try {
+      const updated = await api.changeStatus(demand.id, status);
+      setDemand(updated);
+    } catch (changeError) {
+      setStatusError(
+        changeError instanceof Error ? changeError.message : "Erro ao alterar status.",
+      );
+    } finally {
+      setStatusSaving(false);
+    }
+  }
+
+  async function onAddComment(values: { body: string }) {
+    if (!demand) {
+      return;
+    }
+
+    await api.addComment(demand.id, values.body);
+    reset({ body: "" });
+    await refresh();
+  }
 
   if (loading) {
     return (
@@ -107,6 +177,29 @@ export function DemandDetailPage() {
         </div>
       </section>
 
+      <section className="status-control">
+        <label>
+          Alterar status
+          <select
+            value={demand.status}
+            disabled={statusSaving || isClosed(demand.status)}
+            onChange={(event) => onChangeStatus(event.target.value as DemandStatus)}
+          >
+            {demandStatuses.map((status) => (
+              <option key={status} value={status}>
+                {statusLabels[status]}
+              </option>
+            ))}
+          </select>
+        </label>
+        {isClosed(demand.status) ? (
+          <span className="muted">
+            Demandas concluidas ou canceladas nao podem ser reabertas.
+          </span>
+        ) : null}
+        {statusError ? <span className="field-error">{statusError}</span> : null}
+      </section>
+
       <section className="split-section">
         <div>
           <h2>Historico</h2>
@@ -130,6 +223,19 @@ export function DemandDetailPage() {
               </li>
             ))}
           </ul>
+
+          <form className="comment-form" onSubmit={handleSubmit(onAddComment)}>
+            <label>
+              Novo comentario
+              <textarea rows={3} {...register("body")} />
+              {errors.body ? (
+                <span className="field-error">{errors.body.message}</span>
+              ) : null}
+            </label>
+            <button className="button" type="submit" disabled={isSubmitting}>
+              Comentar
+            </button>
+          </form>
         </div>
       </section>
     </main>
