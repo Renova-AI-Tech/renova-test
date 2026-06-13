@@ -52,7 +52,7 @@ export function DemandForm({
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
   } = useForm<CreateDemandInput>({
     resolver:
       mode === "create"
@@ -83,7 +83,15 @@ export function DemandForm({
         const created = await api.createDemand(values);
         navigate(`/demands/${created.id}`);
       } else if (demand) {
-        await api.updateDemand(demand.id, values);
+        const changed = Object.keys(dirtyFields) as Array<
+          keyof CreateDemandInput
+        >;
+        const patch = changed.reduce<Partial<CreateDemandInput>>(
+          (acc, field) => ({ ...acc, [field]: values[field] }),
+          {},
+        );
+
+        await api.updateDemand(demand.id, patch);
         navigate(`/demands/${demand.id}`);
       }
     } catch (error) {
