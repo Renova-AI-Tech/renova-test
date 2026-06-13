@@ -106,6 +106,14 @@ export const createDemandFormSchema = createDemandSchema
     },
   );
 
+export const editDemandFormSchema = createDemandSchema.refine(
+  (data) => (requiresAssignee(data.status) ? Boolean(data.assigneeId) : true),
+  {
+    message: "Selecione um responsavel para esse status.",
+    path: ["assigneeId"],
+  },
+);
+
 export const statusChangeSchema = z.object({
   status: demandStatusSchema,
 });

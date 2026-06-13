@@ -74,4 +74,18 @@ describe("demand status transitions", () => {
     expect(response.json().status).toBe("cancelled");
     expect(response.json().title).toBe("Titulo atualizado");
   });
+
+  it("blocks clearing the assignee of an in_progress demand", async () => {
+    const app = await buildSeededTestServer();
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/demands/demand-004",
+      payload: { assigneeId: null }
+    });
+
+    await app.close();
+
+    expect(response.statusCode).toBe(400);
+  });
 });

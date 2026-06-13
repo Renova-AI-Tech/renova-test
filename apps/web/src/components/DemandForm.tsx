@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createDemandFormSchema,
-  createDemandSchema,
+  editDemandFormSchema,
   demandPriorities,
   demandStatuses,
   type Assignee,
@@ -57,7 +57,7 @@ export function DemandForm({
     resolver:
       mode === "create"
         ? zodResolver(createDemandFormSchema)
-        : zodResolver(createDemandSchema),
+        : zodResolver(editDemandFormSchema),
     defaultValues: demand
       ? {
           title: demand.title,
@@ -123,7 +123,9 @@ export function DemandForm({
               ))}
             </select>
           </label>
-        ) : null}
+        ) : (
+          <input type="hidden" {...register("status")} />
+        )}
 
         <label>
           Cliente

@@ -340,6 +340,20 @@ export function updateDemand(
   }
 
   const fields = parsed.data;
+
+  const nextAssigneeId =
+    fields.assigneeId !== undefined ? fields.assigneeId : existing.assigneeId;
+  if (
+    (existing.status === "in_progress" || existing.status === "done") &&
+    !nextAssigneeId
+  ) {
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Demandas em andamento ou concluidas precisam de responsavel.",
+    };
+  }
+
   const updates: string[] = [];
   const params: Record<string, string | null> = { id };
 
