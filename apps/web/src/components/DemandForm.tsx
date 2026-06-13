@@ -112,16 +112,18 @@ export function DemandForm({
           ) : null}
         </label>
 
-        <label>
-          Status
-          <select {...register("status")}>
-            {demandStatuses.map((status) => (
-              <option key={status} value={status}>
-                {statusLabels[status]}
-              </option>
-            ))}
-          </select>
-        </label>
+        {mode === "create" ? (
+          <label>
+            Status
+            <select {...register("status")}>
+              {demandStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {statusLabels[status]}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         <label>
           Cliente

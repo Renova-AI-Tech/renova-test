@@ -349,7 +349,6 @@ export function updateDemand(
     clientId: "client_id",
     projectId: "project_id",
     assigneeId: "assignee_id",
-    status: "status",
     priority: "priority",
     dueDate: "due_date",
   } as const;

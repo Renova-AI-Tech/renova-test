@@ -58,4 +58,20 @@ describe("demand status transitions", () => {
 
     expect(response.statusCode).toBe(400);
   });
+
+  it("does not change status through the generic update endpoint", async () => {
+    const app = await buildSeededTestServer();
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/demands/demand-007",
+      payload: { status: "in_progress", title: "Titulo atualizado" }
+    });
+
+    await app.close();
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().status).toBe("cancelled");
+    expect(response.json().title).toBe("Titulo atualizado");
+  });
 });
