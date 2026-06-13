@@ -425,6 +425,26 @@ export function changeDemandStatus(
   }
 
   const status = parsed.data.status;
+
+  if (existing.status === "done" || existing.status === "cancelled") {
+    return {
+      ok: false,
+      statusCode: 409,
+      message: "Demandas concluidas ou canceladas nao podem ser reabertas.",
+    };
+  }
+
+  if (
+    (status === "in_progress" || status === "done") &&
+    !existing.assigneeId
+  ) {
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Demandas em andamento ou concluidas precisam de responsavel.",
+    };
+  }
+
   const now = new Date().toISOString();
 
   db.prepare(
