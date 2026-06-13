@@ -73,13 +73,11 @@ export function DemandsListPage() {
   function updateFilters(nextFilters: DemandFilters) {
     const params = new URLSearchParams();
 
-    if (nextFilters.status) {
-      params.set("status", nextFilters.status);
-    }
-
-    if (nextFilters.search) {
-      params.set("search", nextFilters.search);
-    }
+    Object.entries(nextFilters).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      }
+    });
 
     setSearchParams(params);
   }

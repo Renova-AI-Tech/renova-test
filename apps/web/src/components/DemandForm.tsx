@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  createDemandSchema,
+  createDemandFormSchema,
+  editDemandFormSchema,
   demandPriorities,
   demandStatuses,
   type Assignee,
@@ -9,7 +10,10 @@ import {
   type DemandDetail,
   type Project,
 } from "@painel-demandas/shared";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
 
 type DemandFormProps = {
   mode: "create" | "edit";
@@ -42,12 +46,18 @@ export function DemandForm({
   assignees,
   demand,
 }: DemandFormProps) {
+  const navigate = useNavigate();
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
   } = useForm<CreateDemandInput>({
-    resolver: zodResolver(createDemandSchema),
+    resolver:
+      mode === "create"
+        ? zodResolver(createDemandFormSchema)
+        : zodResolver(editDemandFormSchema),
     defaultValues: demand
       ? {
           title: demand.title,
@@ -65,8 +75,30 @@ export function DemandForm({
         },
   });
 
-  function onSubmit(values: CreateDemandInput) {
-    console.info("DemandForm submitted but not wired yet", mode, values);
+  async function onSubmit(values: CreateDemandInput) {
+    setSubmitError(null);
+
+    try {
+      if (mode === "create") {
+        const created = await api.createDemand(values);
+        navigate(`/demands/${created.id}`);
+      } else if (demand) {
+        const changed = Object.keys(dirtyFields) as Array<
+          keyof CreateDemandInput
+        >;
+        const patch = changed.reduce<Partial<CreateDemandInput>>(
+          (acc, field) => ({ ...acc, [field]: values[field] }),
+          {},
+        );
+
+        await api.updateDemand(demand.id, patch);
+        navigate(`/demands/${demand.id}`);
+      }
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : "Erro ao salvar a demanda.",
+      );
+    }
   }
 
   return (
@@ -80,16 +112,20 @@ export function DemandForm({
           ) : null}
         </label>
 
-        <label>
-          Status
-          <select {...register("status")}>
-            {demandStatuses.map((status) => (
-              <option key={status} value={status}>
-                {statusLabels[status]}
-              </option>
-            ))}
-          </select>
-        </label>
+        {mode === "create" ? (
+          <label>
+            Status
+            <select {...register("status")}>
+              {demandStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {statusLabels[status]}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <input type="hidden" {...register("status")} />
+        )}
 
         <label>
           Cliente
@@ -123,7 +159,11 @@ export function DemandForm({
 
         <label>
           Responsavel
-          <select {...register("assigneeId")}>
+          <select
+            {...register("assigneeId", {
+              setValueAs: (value) => (value === "" ? null : value),
+            })}
+          >
             <option value="">Sem responsavel</option>
             {assignees.map((assignee) => (
               <option key={assignee.id} value={assignee.id}>
@@ -131,6 +171,9 @@ export function DemandForm({
               </option>
             ))}
           </select>
+          {errors.assigneeId ? (
+            <span className="field-error">{errors.assigneeId.message}</span>
+          ) : null}
         </label>
 
         <label>
@@ -160,6 +203,8 @@ export function DemandForm({
           <span className="field-error">{errors.description.message}</span>
         ) : null}
       </label>
+
+      {submitError ? <p className="field-error">{submitError}</p> : null}
 
       <div className="form-actions">
         <button

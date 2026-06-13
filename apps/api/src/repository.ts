@@ -1,6 +1,6 @@
 import {
   addCommentSchema,
-  createDemandSchema,
+  createDemandFormSchema,
   demandFiltersSchema,
   isDemandOverdue,
   statusChangeSchema,
@@ -119,14 +119,6 @@ function normalizePatchPayload(input: unknown) {
   );
 }
 
-function compareDateOnly(left: string, right: string) {
-  return left.localeCompare(right);
-}
-
-function todayDate() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function insertEvent(
   db: AppDatabase,
   demandId: string,
@@ -204,6 +196,21 @@ export function listDemands(db: AppDatabase, query: unknown) {
     params.status = filters.status;
   }
 
+  if (filters.priority) {
+    where.push("d.priority = @priority");
+    params.priority = filters.priority;
+  }
+
+  if (filters.clientId) {
+    where.push("d.client_id = @clientId");
+    params.clientId = filters.clientId;
+  }
+
+  if (filters.assigneeId) {
+    where.push("d.assignee_id = @assigneeId");
+    params.assigneeId = filters.assigneeId;
+  }
+
   if (filters.search) {
     where.push(
       "(LOWER(d.title) LIKE @search OR LOWER(d.description) LIKE @search)",
@@ -224,9 +231,16 @@ export function listDemands(db: AppDatabase, query: unknown) {
       d.due_date ASC
   `;
 
-  return (db.prepare(sql).all(params) as JoinedDemandRow[]).map(
+  const demands = (db.prepare(sql).all(params) as JoinedDemandRow[]).map(
     mapDemandWithRelations,
   );
+
+  if (filters.overdue) {
+    const overdue = filters.overdue === "true";
+    return demands.filter((demand) => demand.isOverdue === overdue);
+  }
+
+  return demands;
 }
 
 export function getDemandById(
@@ -252,7 +266,7 @@ export function createDemand(
   db: AppDatabase,
   payload: unknown,
 ): RepositoryResult<DemandDetail> {
-  const parsed = createDemandSchema.safeParse(payload);
+  const parsed = createDemandFormSchema.safeParse(payload);
 
   if (!parsed.success) {
     return {
@@ -264,25 +278,6 @@ export function createDemand(
   }
 
   const input = parsed.data;
-
-  if (compareDateOnly(input.dueDate, todayDate()) < 0) {
-    return {
-      ok: false,
-      statusCode: 400,
-      message: "A data de prazo nao pode ser anterior a hoje.",
-    };
-  }
-
-  if (
-    (input.status === "in_progress" || input.status === "done") &&
-    !input.assigneeId
-  ) {
-    return {
-      ok: false,
-      statusCode: 400,
-      message: "Demandas em andamento ou concluidas precisam de responsavel.",
-    };
-  }
 
   const now = new Date().toISOString();
   const demand = {
@@ -345,6 +340,20 @@ export function updateDemand(
   }
 
   const fields = parsed.data;
+
+  const nextAssigneeId =
+    fields.assigneeId !== undefined ? fields.assigneeId : existing.assigneeId;
+  if (
+    (existing.status === "in_progress" || existing.status === "done") &&
+    !nextAssigneeId
+  ) {
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Demandas em andamento ou concluidas precisam de responsavel.",
+    };
+  }
+
   const updates: string[] = [];
   const params: Record<string, string | null> = { id };
 
@@ -354,7 +363,6 @@ export function updateDemand(
     clientId: "client_id",
     projectId: "project_id",
     assigneeId: "assignee_id",
-    status: "status",
     priority: "priority",
     dueDate: "due_date",
   } as const;
@@ -403,6 +411,26 @@ export function changeDemandStatus(
   }
 
   const status = parsed.data.status;
+
+  if (existing.status === "done" || existing.status === "cancelled") {
+    return {
+      ok: false,
+      statusCode: 409,
+      message: "Demandas concluidas ou canceladas nao podem ser reabertas.",
+    };
+  }
+
+  if (
+    (status === "in_progress" || status === "done") &&
+    !existing.assigneeId
+  ) {
+    return {
+      ok: false,
+      statusCode: 400,
+      message: "Demandas em andamento ou concluidas precisam de responsavel.",
+    };
+  }
+
   const now = new Date().toISOString();
 
   db.prepare(

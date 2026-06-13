@@ -44,7 +44,8 @@ export async function buildServer(options: BuildServerOptions = {}) {
   });
 
   await app.register(cors, {
-    origin: true
+    origin: true,
+    methods: ["GET", "HEAD", "POST", "PATCH"]
   });
 
   app.addHook("onClose", async () => {

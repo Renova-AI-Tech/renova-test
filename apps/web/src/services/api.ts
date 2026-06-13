@@ -3,6 +3,7 @@ import type {
   Client,
   DemandDetail,
   DemandFilters,
+  DemandStatus,
   DemandWithRelations,
   Project
 } from "@painel-demandas/shared";
@@ -50,6 +51,11 @@ export const api = {
   demand: (id: string) => request<DemandDetail>(`/demands/${id}`),
   createDemand: (body: unknown) => request<DemandDetail>("/demands", { method: "POST", body }),
   updateDemand: (id: string, body: unknown) => request<DemandDetail>(`/demands/${id}`, { method: "PATCH", body }),
+  changeStatus: (id: string, status: DemandStatus) =>
+    request<DemandDetail>(`/demands/${id}/status`, {
+      method: "PATCH",
+      body: { status }
+    }),
   addComment: (id: string, body: string) =>
     request(`/demands/${id}/comments`, {
       method: "POST",
