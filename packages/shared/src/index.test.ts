@@ -15,12 +15,30 @@ describe("shared demand contracts", () => {
     expect(result.success).toBe(true);
   });
 
-  it("ships with the known overdue bug for the candidate to fix", () => {
+  it("marca como atrasada quando vencida e ainda aberta", () => {
     const result = isDemandOverdue({
       dueDate: "2020-01-01",
-      status: "done"
+      status: "todo"
     });
 
     expect(result).toBe(true);
+  });
+
+  it("nao marca como atrasada quando concluida ou cancelada, mesmo vencida", () => {
+    expect(isDemandOverdue({ dueDate: "2020-01-01", status: "done" })).toBe(
+      false
+    );
+    expect(
+      isDemandOverdue({ dueDate: "2020-01-01", status: "cancelled" })
+    ).toBe(false);
+  });
+
+  it("nao marca como atrasada quando o prazo ainda nao chegou", () => {
+    const result = isDemandOverdue(
+      { dueDate: "2026-01-02", status: "todo" },
+      new Date("2026-01-01T12:00:00.000Z")
+    );
+
+    expect(result).toBe(false);
   });
 });

@@ -132,6 +132,10 @@ export function isDemandOverdue(
   demand: Pick<Demand, "dueDate" | "status">,
   now = new Date(),
 ) {
+  if (demand.status === "done" || demand.status === "cancelled") {
+    return false;
+  }
+
   const due = new Date(`${demand.dueDate}T23:59:59.999`);
 
   return due.getTime() < now.getTime();
